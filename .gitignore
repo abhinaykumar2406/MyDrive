@@ -29,3 +29,6 @@ build/
 *.njsproj
 *.sln
 *.sw?
+
+server/storage/*
+!server/storage/.gitkeep
