@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 app.use("/directory",directoryRoutes);
-app.use("/files",fileRoutes);
+app.use("/file",fileRoutes);
 
 app.listen(4000, "127.0.0.1", () => {
     console.log("Server started");

@@ -29,7 +29,7 @@ function DirectoryView() {
     setIsUploading(true);
     setProgress(0);
     const xhr = new XMLHttpRequest();
-    xhr.open('POST',`${BASE_URL}/files/${dirPath}/${file.name}`,true);
+    xhr.open('POST',`${BASE_URL}/file/${dirPath}/${file.name}`,true);
     xhr.addEventListener("load",()=>{
       console.log(xhr.response);
     })
@@ -65,7 +65,7 @@ function DirectoryView() {
 
   async function handleDelete(filename){
     console.log(filename);
-    const res =await fetch(`${BASE_URL}/files/${dirPath}/${filename}`,{
+    const res =await fetch(`${BASE_URL}/file/${dirPath}/${filename}`,{
       method:"DELETE",
     });
     const data = await res.text();
@@ -74,7 +74,7 @@ function DirectoryView() {
   }
   async function handleRenameForm(oldname, newname){
     console.log("rename");
-    const res =await fetch(`${BASE_URL}/files/${dirPath}/${oldname}?action=rename`,{
+    const res =await fetch(`${BASE_URL}/file/${dirPath}/${oldname}?action=rename`,{
       method:"PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -196,12 +196,12 @@ function DirectoryView() {
           <>
             📄 {item.name}{" "}
             <a
-              href={`${BASE_URL}/files/${dirPath}/${item.name}?action=open`}
+              href={`${BASE_URL}/file/${dirPath}/${item.name}?action=open`}
             >
               Open
             </a>{" "}
             <a
-              href={`${BASE_URL}/files/${dirPath}/${item.name}?action=download`}
+              href={`${BASE_URL}/file/${dirPath}/${item.name}?action=download`}
             >
               Download
             </a>

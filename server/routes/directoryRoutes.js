@@ -1,6 +1,8 @@
 import express from "express"
 import { readdir, stat, mkdir } from "fs/promises";
 import path from "path";
+import directoriesDB from "../directoriesDB.json" with {type:"json"}
+import filesDB from "../filesDB.json" with {type: "json"}
 
 const router = express.Router();
 const storageDir = path.join(import.meta.dirname, "..", "storage");
@@ -23,15 +25,22 @@ const getDirectoryResponse = (async (itemList,dir)=>{
     return itemObj;
 });
 
-router.get("",async (req,res)=>{
-    try{
-        const itemList = await readdir(storageDir);
-        const itemObj = await getDirectoryResponse(itemList,"");
-        res.json(itemObj);
-    }
-    catch(err){
-        res.send({error:err.message});
-    }
+router.get("/",async (req,res)=>{
+    const {id} = req.params;
+    // root = always first element
+    const dirData = directoriesDB[0];
+    const files = dirData.files.map((fileId)=>{
+        return filesDB.find((file)=>file.id === fileId)
+    });
+    const dirs = dirData.dirs.map((dirId)=>{
+        return directoriesDB.find((dir)=>dir.id === dirId)
+    });
+    res.json({...dirData,files,dirs});
+});
+router.get("/:id",async (req,res)=>{
+    const {id} = req.params;
+    const dirData = directoriesDB.find((dir)=> dir.id===id);
+    res.json(dirData);
 });
 
 router.get("{/*dirname}",async (req,res)=>{
