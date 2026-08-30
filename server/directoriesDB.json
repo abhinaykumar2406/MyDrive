@@ -1,1 +1,12 @@
-[{"id":"ba97ddec-2704-44ba-8f56-9489a913d007","name":"test","parentDir":null,"files":["143b0456-fa8b-4623-aab8-a8c23ebc4875","579f10e1-c08f-4503-9c6e-bc272a73a226"],"dirs":[]}]
+[
+    {
+        "id": "ba97ddec-2704-44ba-8f56-9489a913d007",
+        "name": "test",
+        "parentDir": null,
+        "files": [
+            "143b0456-fa8b-4623-aab8-a8c23ebc4875",
+            "2fd07c6e-ae42-400e-94ec-82201ecd56f4"
+        ],
+        "dirs": []
+    }
+]
