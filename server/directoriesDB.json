@@ -1,12 +1,1 @@
-[
-    {
-        "id": "ba97ddec-2704-44ba-8f56-9489a913d007",
-        "name": "test",
-        "parentDir": null,
-        "files": [
-            "143b0456-fa8b-4623-aab8-a8c23ebc4875",
-            "2fd07c6e-ae42-400e-94ec-82201ecd56f4"
-        ],
-        "dirs": []
-    }
-]
+[{"id":"ba97ddec-2704-44ba-8f56-9489a913d007","name":"root","parentDir":null,"files":["a7291fb9-f6b5-426e-9844-8785cd6644a5"],"dirs":["b8fe161c-22aa-4ea1-87ea-cadf769d606f"]},{"id":"b8fe161c-22aa-4ea1-87ea-cadf769d606f","name":"images","parentDir":"ba97ddec-2704-44ba-8f56-9489a913d007","files":[],"dirs":[]}]

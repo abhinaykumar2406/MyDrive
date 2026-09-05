@@ -12,15 +12,17 @@ function DirectoryView() {
   const [message, setMessage] = useState("");
   const [createDirectory, setCreateDirectory] = useState(false);
   const [fileForRename, setFileForRename] = useState("");
+  const [elementType, setElementType] = useState("");
   const [fileIdForRename, setFileIdForRename] = useState("");
   const [newFileName, setNewFileName] = useState(fileForRename);
-  const [newDirectory, setNewDirectory] = useState(fileForRename);
+  const [newDirectory, setNewDirectory] = useState("");
+  const [isCreatingDirectory, setIsCreatingDirectory] = useState(false);
+
   const fileInputRef = useRef(null);
-  const {'*':dirPath} = useParams();
-  console.log(dirPath);
+  const {'id':dirId} = useParams();
 
   async function getDirectoryItems() {
-    const response = await fetch(`${BASE_URL}/directory/${dirPath}`);
+    const response = await fetch(`${BASE_URL}/directory${dirId ? `/${dirId}` : ""}`);
     const data = await response.json();
     setDirectoryItems(data);
   }
@@ -34,9 +36,13 @@ function DirectoryView() {
     setProgress(0);
     const xhr = new XMLHttpRequest();
     xhr.open('POST',`${BASE_URL}/file/${file.name}`,true);
+    if (dirId) {
+      xhr.setRequestHeader("parentdirid", dirId);
+    }
+
     xhr.addEventListener("load",()=>{
       console.log(xhr.response);
-    })
+    });
     xhr.upload.addEventListener('progress',(e)=>{
       const totalProgress = (e.loaded / e.total)*100;
       // console.log(`${totalProgress.toFixed(2)}%`)
@@ -67,21 +73,21 @@ function DirectoryView() {
     xhr.send(file);
   }
 
-  async function handleDelete(fileId,parentDirId){
+  async function handleDelete(type,fileId){
     console.log(fileId);
-    const res =await fetch(`${BASE_URL}/file/${fileId}`,{
+    const res =await fetch(`${BASE_URL}/${type}/${fileId}`,{
       method:"DELETE",
       headers:{
-        "parentdirid":parentDirId,
+        "parentdirid":dirId,
       },
     });
     const data = await res.text();
     console.log(data);
     await getDirectoryItems();
   }
-  async function handleRenameForm(oldFileId, newname){
+  async function handleRenameForm(type,oldFileId, newname){
     console.log("rename");
-    const res =await fetch(`${BASE_URL}/file/${oldFileId}?action=rename`,{
+    const res =await fetch(`${BASE_URL}/${type}/${oldFileId}?action=rename`,{
       method:"PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -92,12 +98,19 @@ function DirectoryView() {
     console.log(data);
     setFileForRename("");
     setFileIdForRename("");
+    setElementType("");
     await getDirectoryItems();
   }
   async function handleCreateNewDirectory() {
+    if (isCreatingDirectory) return;
+    setIsCreatingDirectory(true);
+
     try {
-      const response = await fetch(`${BASE_URL}/directory/${dirPath}/${newDirectory}`, {
+      const response = await fetch(`${BASE_URL}/directory/${newDirectory}`, {
         method: "POST",
+        headers:{
+          "parentdirid": dirId,
+        }
       });
 
       const data = await response.json();
@@ -112,13 +125,15 @@ function DirectoryView() {
       setCreateDirectory(false);
     } catch (error) {
       console.error(error);
+    }finally {
+      setIsCreatingDirectory(false);
     }
     await getDirectoryItems();
   }
 
   useEffect(() => {
     getDirectoryItems();
-  }, [dirPath]);
+  }, [dirId]);
   useEffect(() => {
     setNewFileName(fileForRename);
   }, [fileForRename]);
@@ -140,13 +155,13 @@ function DirectoryView() {
         </>
       )}
       <div>
-        <Link className="button" onClick={()=>{setCreateDirectory(true)}}>New Folder</Link>
+        <button className="button" onClick={()=>{setCreateDirectory(true)}}>New Folder</button>
       </div>
       {createDirectory && (
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            handleCreateNewDirectory();
+            await handleCreateNewDirectory();
           }}
         >
           <label htmlFor="newDirectory">New Folder Name:</label>
@@ -167,13 +182,13 @@ function DirectoryView() {
       )}
       {message && <p>{message}</p>}
       {
-        fileForRename && fileIdForRename && (
+        elementType && fileForRename && fileIdForRename && (
           <form onSubmit={(e)=>{
             e.preventDefault();
 
             const oldFileId = `${fileIdForRename}`;
             const newname = `${newFileName}`;
-            handleRenameForm(oldFileId,newname);
+            handleRenameForm(elementType,oldFileId,newname);
           }}>
             <label htmlFor="filename">New File Name:</label>
             <input
@@ -195,11 +210,19 @@ function DirectoryView() {
             <>
             📁{" "}
               <Link
-                to={`./${item.name}`}
+                to={`/directory/${item.id}`}
                 className="button"
               >
                 {item.name}
               </Link>
+              <button className="button" onClick={()=>{
+                handleDelete("directory",item.id);
+              }}>Delete</button>
+              <button className="button" onClick={()=>{
+                setFileForRename(item.name);
+                setFileIdForRename(item.id);
+                setElementType("directory");
+              }}>Rename</button>
             </>
           </>
         )}
@@ -221,12 +244,13 @@ function DirectoryView() {
             >
               Download
             </a>
-            <button className="button" onClick={()=>{
-              handleDelete(item.id,item.parentDir)
+            <button className="button" onClick={async()=>{
+              handleDelete("file",item.id)
             }}>Delete</button>
             <button className="button" onClick={()=>{
               setFileForRename(item.name);
               setFileIdForRename(item.id);
+              setElementType("file");
             }}>Rename</button>
           </>
         )}

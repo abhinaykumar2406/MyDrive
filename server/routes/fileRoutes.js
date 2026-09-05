@@ -16,7 +16,7 @@ router.get("/:id",(req,res,next)=>{
         const fileData = filesDB.find((file)=>file.id === id);
         const filename = `${id}${fileData.extension}`;
         if(req.query.action === "download"){
-            res.set("Content-Disposition","attachment");
+            res.set("Content-Disposition",`attachment; filename="${fileData.name}`);
         }
         res.sendFile(path.join(storageDir,filename));
     }
@@ -28,6 +28,7 @@ router.get("/:id",(req,res,next)=>{
 router.delete("/:id",async (req,res,next)=>{
     try {
         const {id} = req.params;
+        console.log(id);
         const fileIndex = filesDB.findIndex((file)=>file.id === id);
         console.log(fileIndex);
         const parentDir = filesDB[fileIndex].parentDir;
@@ -51,7 +52,7 @@ router.delete("/:id",async (req,res,next)=>{
     }
 });
 
-router.patch("/:id",async (req,res,next)=>{
+router.patch("/:id",async (req,res)=>{
     if(req.query.action==="rename"){
         try {
             const {id} = req.params;

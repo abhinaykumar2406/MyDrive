@@ -1,15 +1,19 @@
-import {createBrowserRouter, RouterProvider} from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import DirectoryView from "./DirectoryView";
 import "./App.css";
 
-const router =createBrowserRouter([
+const router = createBrowserRouter([
   {
-    path: "/*",
-    element: <DirectoryView />
+    path: "/directory",
+    element: <DirectoryView />,
+  },
+  {
+    path: "/directory/:id",
+    element: <DirectoryView />,
   },
 ]);
 
-function App(){
+function App() {
   return <RouterProvider router={router} />;
 }
 
