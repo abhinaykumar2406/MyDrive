@@ -14,14 +14,18 @@ router.get("/:id",(req,res,next)=>{
     try{
         const {id} = req.params;
         const fileData = filesDB.find((file)=>file.id === id);
+        if(!fileData){
+            return res.status(404).json({error:"File Not Found!"})
+        }
         const filename = `${id}${fileData.extension}`;
         if(req.query.action === "download"){
             res.set("Content-Disposition",`attachment; filename="${fileData.name}`);
         }
-        res.sendFile(path.join(storageDir,filename));
+        return res.sendFile(path.join(storageDir,filename));
     }
     catch(err){
-        res.send({error:err.message});
+        err.status = 500;
+        return next(err);
     }
 });
 
@@ -30,6 +34,9 @@ router.delete("/:id",async (req,res,next)=>{
         const {id} = req.params;
         console.log(id);
         const fileIndex = filesDB.findIndex((file)=>file.id === id);
+        if(fileIndex === -1){
+            return res.status(404).json({message:"File Not Found!"});
+        }
         console.log(fileIndex);
         const parentDir = filesDB[fileIndex].parentDir;
         const filename = `${id}${filesDB[fileIndex].extension}`;
@@ -44,37 +51,42 @@ router.delete("/:id",async (req,res,next)=>{
         await writeFile(directoriesDBPath,JSON.stringify(directoriesDB));
         await unlink(path.join(storageDir, filename));
         console.log("File deleted successfully");
-        res.end("Deleted Successfully");
+        return res.end("Deleted Successfully");
 
     } catch (err) {
         console.error(err);
-        res.send("Delete failed");
+        return res.send("Delete failed");
     }
 });
 
-router.patch("/:id",async (req,res)=>{
+router.patch("/:id",async (req,res,next)=>{ 
     if(req.query.action==="rename"){
         try {
             const {id} = req.params;
             const {newname} = req.body;
             const fileData = filesDB.find((file)=>file.id === id);
+            if(!fileData){
+                return res.status(404).json({error:"File Not Found!"})
+            }
             fileData.name = newname;
             await writeFile(fileDBPath,JSON.stringify(filesDB));
             console.log("Renamed successfully");
-            res.send("Renamed Successfully")
+            return res.send("Renamed Successfully")
         }catch (err) {
             console.error(err);
-            res.send("Rename Failed");
+            next(err);
         }
     }
     else{
-        res.send("Invalid query");
+        return res.send("Invalid query");
     }
 });
 
-router.post("/:filename",async (req,res)=>{
+router.post("/:filename",async (req,res,next)=>{
     try{
         const {filename} = req.params;
+        if(!filename || filename==="undefined")
+            filename = "Untitled";
         const parentDirId = req.headers.parentdirid || directoriesDB[0].id;
         const id = crypto.randomUUID();
         const extension = path.extname(filename);
@@ -94,14 +106,14 @@ router.post("/:filename",async (req,res)=>{
             dirData.files.push(id);
             await writeFile(fileDBPath,JSON.stringify(filesDB));
             await writeFile(directoriesDBPath,JSON.stringify(directoriesDB));
-            res.send("File Uploaded Successfully");
+            return res.status(201).send("File Uploaded Successfully");
         });
         req.on("end",()=>{
           writestream.end();
         });
     }
     catch(err){
-        res.send({error:err.message});
+        next(err);
     }
 });
 

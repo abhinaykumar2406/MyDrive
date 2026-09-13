@@ -1,10 +1,19 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import DirectoryView from "./DirectoryView";
 import "./App.css";
+import Register from "./Register";
 
 const router = createBrowserRouter([
   {
-    path: "/directory",
+    path: "/user",
+    element: <Register />,
+  },
+  {
+    path: "/",
+    element: <Register />,
+  },
+  {
+    path: "/directory/",
     element: <DirectoryView />,
   },
   {
