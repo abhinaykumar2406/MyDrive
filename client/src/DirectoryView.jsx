@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 function DirectoryView() {
   const BASE_URL = 'http://127.0.0.1:4000';
@@ -7,6 +7,7 @@ function DirectoryView() {
     dirs: [],
     files: [],
   });
+  const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -22,8 +23,13 @@ function DirectoryView() {
   const {'id':dirId} = useParams();
 
   async function getDirectoryItems() {
-    const response = await fetch(`${BASE_URL}/directory${dirId ? `/${dirId}` : ""}`);
+    const response = await fetch(`${BASE_URL}/directory${dirId ? `/${dirId}` : ""}`,{
+      credentials:"include"
+    });
     const data = await response.json();
+    if(response.status === 401){
+      navigate("/user")
+    }
     setDirectoryItems(data);
   }
 
@@ -36,6 +42,7 @@ function DirectoryView() {
     setProgress(0);
     const xhr = new XMLHttpRequest();
     xhr.open('POST',`${BASE_URL}/file/${file.name}`,true);
+    xhr.withCredentials = true;
     if (dirId) {
       xhr.setRequestHeader("parentdirid", dirId);
     }
@@ -80,6 +87,7 @@ function DirectoryView() {
       headers:{
         "parentdirid":dirId,
       },
+      credentials:"include",
     });
     const data = await res.text();
     console.log(data);
@@ -93,6 +101,7 @@ function DirectoryView() {
         "Content-Type": "application/json",
       },
       body:JSON.stringify({newname: `${newname}`}),
+      credentials:"include",
     });
     const data = await res.text();
     console.log(data);
@@ -110,7 +119,8 @@ function DirectoryView() {
         method: "POST",
         headers:{
           "parentdirid": dirId,
-        }
+        },
+        credentials:"include",
       });
 
       const data = await response.json();

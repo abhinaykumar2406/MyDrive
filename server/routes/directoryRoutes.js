@@ -1,5 +1,5 @@
 import express from "express"
-import { readdir, stat, mkdir, unlink, writeFile } from "fs/promises";
+import {unlink, writeFile } from "fs/promises";
 import path from "path";
 import directoriesDB from "../directoriesDB.json" with {type:"json"}
 import filesDB from "../filesDB.json" with {type: "json"}
@@ -10,9 +10,9 @@ const fileDBPath = path.join(import.meta.dirname, "..", "filesDB.json");
 const directoriesDBPath = path.join(import.meta.dirname, "..", "directoriesDB.json");
 
 router.get("/",async (req,res,next)=>{
-    // root = always first element
+    const user = req.user;
     try{
-        const dirData = directoriesDB[0];
+        const dirData = user.rootDirId;
         const files = dirData.files.map((fileId)=>{
             return filesDB.find((file)=>file.id === fileId)
         });
@@ -26,12 +26,15 @@ router.get("/",async (req,res,next)=>{
     }
 });
 router.get("/:id",async (req,res,next)=>{
+    const {uid} = req.cookies;
     try{
-        const id = req.params.id || directoriesDB[0].id;
-                    
+        const id = req.params.id;
         const dirData = directoriesDB.find((dir)=> dir.id===id);
         if(!dirData){
             return res.status(404).json({message:"Directory Not Found!"});
+        }
+        if(dirData.userId!=uid){
+            return res.status(401).json({message:"Unauthorized"});
         }
         const files = dirData.files.map((fileId)=>{
             return filesDB.find((file)=>file.id === fileId)
@@ -47,27 +50,33 @@ router.get("/:id",async (req,res,next)=>{
 });
 
 router.post("/:dirname",async (req,res,next)=>{
+    const {uid} = req.cookies;
     const dirname = req.params.dirname || "New Folder";
     let parentDirId = req.headers.parentdirid;
+    const user = req.user;
     if(!req.headers.parentdirid || req.headers.parentdirid==="undefined")
-        parentDirId = directoriesDB[0].id;
+        parentDirId=user.rootDirId;
 
     console.log("Header:", req.headers.parentdirid);
     console.log("Final parentDirId:", parentDirId);
 
     try{
+        const dirData = directoriesDB.find((dir)=>dir.id===parentDirId);
+        if(!dirData){
+            return res.status(404).json({message:"Parent Directory Not Found!"});
+        }
+        if(dirData.userId!=uid){
+            return res.status(401).json({message:"Unauthorized!"});
+        }
         const id = crypto.randomUUID();
         directoriesDB.push({
             id,
+            userId:uid,
             name:dirname,
             parentDir:parentDirId,
             files:[],
             dirs:[],
         });
-        const dirData = directoriesDB.find((dir)=>dir.id===parentDirId);
-        if(!dirData){
-            return res.status(404).json({message:"Parent Directory Not Found!"});
-        }
         console.log(dirData);
         dirData.dirs.push(id);
         await writeFile(directoriesDBPath,JSON.stringify(directoriesDB));
@@ -86,6 +95,7 @@ router.post("/:dirname",async (req,res,next)=>{
 });
 
 router.patch("/:id",async (req,res,next)=>{
+    const {uid} = req.cookies;
     if(req.query.action === "rename"){
         try {
             const {id} = req.params;
@@ -93,6 +103,9 @@ router.patch("/:id",async (req,res,next)=>{
             const dirData = directoriesDB.find((dir)=>dir.id === id);
             if(!dirData){
                 return res.status(404).json({message:"Directory Not Found!"});
+            }
+            if(dirData.userId!=uid){
+                return res.status(401).json({message:"Unauthorized"});
             }
             dirData.name = newname;
             await writeFile(directoriesDBPath,JSON.stringify(directoriesDB));
@@ -108,7 +121,7 @@ router.patch("/:id",async (req,res,next)=>{
     }
 });
 
-const deleteDirectory = (async (id)=>{
+const deleteDirectory = (async (id,uid)=>{
     console.log(id);
     if (id === "root") {
         throw new Error("Root directory cannot be deleted");
@@ -118,7 +131,9 @@ const deleteDirectory = (async (id)=>{
     if (dirIndex === -1) {
         throw new Error("Directory not found");
     }
-
+    if(directoriesDB[dirIndex].userId!=uid){
+        return res.status(401).json({message:"Unauthorized"});
+    }
     const parentDirId = directoriesDB[dirIndex].parentDir;
     const parentDir = directoriesDB.find((dir)=> dir.id === parentDirId);
     const dirCurrentDirData = directoriesDB[dirIndex];
@@ -138,9 +153,10 @@ const deleteDirectory = (async (id)=>{
 });
 
 router.delete("/:id",async(req,res,next)=>{
+    const {uid} = req.cookies;
     try{
         const {id} = req.params;
-        await deleteDirectory(id);
+        await deleteDirectory(id,uid);
         await writeFile(fileDBPath,JSON.stringify(filesDB));
         await writeFile(directoriesDBPath,JSON.stringify(directoriesDB));
         console.log("File Deleted successfully");

@@ -28,7 +28,7 @@ function Register() {
 
     const endpoint = isLogin
       ? `${BASE_URL}/user/login`
-      : `${BASE_URL}/user`;
+      : `${BASE_URL}/user/register`;
 
     const data = isLogin
       ? {
@@ -44,6 +44,7 @@ function Register() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
+        credentials:"include",
       });
 
       const result = await response.json();

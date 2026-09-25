@@ -17,6 +17,11 @@ router.get("/:id",(req,res,next)=>{
         if(!fileData){
             return res.status(404).json({error:"File Not Found!"})
         }
+        const parentDirId = fileData.parentDir;
+        const parentDir = directoriesDB.find((dir)=>dir.id===parentDirId);
+        if(parentDir.userId!=req.user.id){
+            return res.status(401).json({message:"Unauthorized"});
+        }
         const filename = `${id}${fileData.extension}`;
         if(req.query.action === "download"){
             res.set("Content-Disposition",`attachment; filename="${fileData.name}`);
@@ -38,11 +43,15 @@ router.delete("/:id",async (req,res,next)=>{
             return res.status(404).json({message:"File Not Found!"});
         }
         console.log(fileIndex);
-        const parentDir = filesDB[fileIndex].parentDir;
+        const parentDirId = filesDB[fileIndex].parentDir;
+        const parentDir = directoriesDB.find((dir)=>dir.id===parentDirId);
+        if(parentDir.userId!=req.user.id){
+            return res.status(401).json({message:"Unauthorized"});
+        }
         const filename = `${id}${filesDB[fileIndex].extension}`;
         filesDB.splice(fileIndex,1);
-        console.log(parentDir);
-        const dirIndex = directoriesDB.findIndex((dir)=>dir.id === parentDir);
+        console.log(parentDirId);
+        const dirIndex = directoriesDB.findIndex((dir)=>dir.id === parentDirId);
         console.log(dirIndex);
         directoriesDB[dirIndex].files = directoriesDB[dirIndex].files.filter(
             (fileId) => fileId !== id
@@ -68,6 +77,10 @@ router.patch("/:id",async (req,res,next)=>{
             if(!fileData){
                 return res.status(404).json({error:"File Not Found!"})
             }
+            const parentDir = directoriesDB.find((dir)=>dir.id===fileData.parentDir);
+            if(parentDir.userId!=req.user.id){
+                return res.status(401).json({message:"Unauthorized"});
+            }
             fileData.name = newname;
             await writeFile(fileDBPath,JSON.stringify(filesDB));
             console.log("Renamed successfully");
@@ -87,7 +100,11 @@ router.post("/:filename",async (req,res,next)=>{
         const {filename} = req.params;
         if(!filename || filename==="undefined")
             filename = "Untitled";
-        const parentDirId = req.headers.parentdirid || directoriesDB[0].id;
+        const parentDirId = req.headers.parentdirid || req.user.rootDirId;
+        const parentDir = directoriesDB.find((dir)=>dir.id===parentDirId);
+        if(parentDir.userId!=req.user.id){
+            return res.status(401).json({message:"Unauthorized"});
+        }
         const id = crypto.randomUUID();
         const extension = path.extname(filename);
         const fullFilename = `${id}${extension}`

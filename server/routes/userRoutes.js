@@ -8,7 +8,7 @@ const router = express.Router();
 const usersDBPath = path.join(import.meta.dirname, "..", "usersDB.json");
 const directoriesDBPath = path.join(import.meta.dirname, "..", "directoriesDB.json");
 
-router.post("/",async (req ,res, next)=>{
+router.post("/register",async (req ,res, next)=>{
     const userId = crypto.randomUUID();
     const rootDirId = `root-${userId}`;
     const {name, email, password} = req.body;
@@ -52,11 +52,30 @@ router.post("/login",async (req,res,next)=>{
     if(userIndex===-1){
         return res.status(404).json({message:"Invalid Email or Password"});
     }
-    console.log("Hi");
+    res.cookie("uid",usersDB[userIndex].id,{
+        maxAge:1000*60*60,
+        httpOnly:true,
+        sameSite:"none",
+        secure:true,
+    });
+    res.cookie("password",usersDB[userIndex].password,{
+        maxAge:1000*60*60,
+        httpOnly:true,
+        sameSite:"none",
+        secure:true,
+    });
     return res.status(200).json({
         message:"Login Successful",
         rootDirId:usersDB[userIndex].rootDirId
     });
 });
 
+router.get("/",async (req,res,next)=>{
+    const {uid,password} = req.cookies;
+    const user = usersDB.find((user)=>user.id===uid && user.password===password);
+    if(!user){
+        return res.status(404).json({message:"User does not exists"});
+    }
+    return res.status(200).json({user:{name:user.name,email:user.email }});
+});
 export default router;
