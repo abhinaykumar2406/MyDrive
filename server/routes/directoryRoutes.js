@@ -12,7 +12,8 @@ const directoriesDBPath = path.join(import.meta.dirname, "..", "directoriesDB.js
 router.get("/",async (req,res,next)=>{
     const user = req.user;
     try{
-        const dirData = user.rootDirId;
+        const dirId = user.rootDirId;
+        const dirData = directoriesDB.find((dir)=>dir.id===dirId);
         const files = dirData.files.map((fileId)=>{
             return filesDB.find((file)=>file.id === fileId)
         });
@@ -110,7 +111,7 @@ router.patch("/:id",async (req,res,next)=>{
             dirData.name = newname;
             await writeFile(directoriesDBPath,JSON.stringify(directoriesDB));
             console.log("Renamed successfully");
-            res.statusCode(200).send("Renamed Successfully")
+            return res.status(200).send("Renamed Successfully");
         }catch (err) {
             console.error(err);
             err.status = 500;

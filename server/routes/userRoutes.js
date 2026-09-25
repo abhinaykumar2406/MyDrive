@@ -3,6 +3,7 @@ import { writeFile } from "fs/promises";
 import path from "path";
 import directoriesDB from "../directoriesDB.json" with {type:"json"}
 import usersDB from "../usersDB.json" with {type:"json"}
+import checkAuth from "../auth.js";
 
 const router = express.Router();
 const usersDBPath = path.join(import.meta.dirname, "..", "usersDB.json");
@@ -70,12 +71,16 @@ router.post("/login",async (req,res,next)=>{
     });
 });
 
-router.get("/",async (req,res,next)=>{
-    const {uid,password} = req.cookies;
-    const user = usersDB.find((user)=>user.id===uid && user.password===password);
-    if(!user){
-        return res.status(404).json({message:"User does not exists"});
-    }
-    return res.status(200).json({user:{name:user.name,email:user.email }});
+router.get("/",checkAuth,async (req,res,next)=>{
+    return res.status(200).json({
+        user:{name:req.user.name,email:req.user.email},
+        rootDirId:req.user.rootDirId,
+    });
+});
+
+router.post("/logout", checkAuth, (req, res) => {
+    res.clearCookie("uid", { httpOnly: true, sameSite: "none", secure: true });
+    res.clearCookie("password", { httpOnly: true, sameSite: "none", secure: true });
+    return res.status(200).json({ message: "Logout Successful" });
 });
 export default router;

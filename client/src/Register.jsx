@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Register.css";
 
@@ -15,6 +15,20 @@ function Register() {
     email: "ak@gmail.com",
     password: "1234",
   });
+
+  useEffect(() => {
+    async function redirectAuthenticatedUser() {
+      try {
+        const response = await fetch(`${BASE_URL}/user`, { credentials: "include" });
+        if (!response.ok) return;
+        const result = await response.json();
+        navigate(`/directory/${result.rootDirId}`, { replace: true });
+      } catch {
+        // Keep login available when the API is unreachable.
+      }
+    }
+    redirectAuthenticatedUser();
+  }, [navigate]);
 
   const handleChange = (e) => {
     setFormData({
